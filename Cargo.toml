@@ -1,0 +1,22 @@
+[package]
+name = "Pragma_indexer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }
+apibara-sdk = { git = "https://github.com/apibara/dna", rev = "9caa385" }
+dashmap = "5.4"
+futures-util = "0.3"
+tracing = "0.1"
+async-trait = "0.1"
+starknet = { git = "https://github.com/xJonathanLEI/starknet-rs", rev = "2ddc694" }
+num-bigint = "0.4"
+redis = { version = "0.23.0", features = ["tokio-comp"] }
+axum = "0.6"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tower = "0.4"
+tower-http = { version = "0.4", features = ["cors"] }
