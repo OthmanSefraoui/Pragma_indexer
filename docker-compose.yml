@@ -5,12 +5,15 @@ services:
     build: .
     ports:
       - "3000:3000"
+      - "61234:61234"
     environment:
       - REDIS_URL=redis://redis:6379
       - APIBARA_API_KEY=${APIBARA_API_KEY}
       - RUST_BACKTRACE=1  # Added for better error tracking
       - STARTING_BLOCK=${STARTING_BLOCK}
       - PRIVATE_KEY=${PRIVATE_KEY}
+      - P2P_LISTEN_ADDR=/ip4/0.0.0.0/tcp/61234
+      - P2P_BOOTSTRAP_PEERS=${P2P_BOOTSTRAP_PEERS:-}
     depends_on:
       redis:
         condition: service_healthy

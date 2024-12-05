@@ -7,6 +7,7 @@ use sha2::{Digest, Sha256};
 pub struct SigningService {
     secp: Secp256k1<secp256k1::All>,
     secret_key: SecretKey,
+    public_key: String,
 }
 
 impl SigningService {
@@ -16,8 +17,18 @@ impl SigningService {
 
         let secret_key = SecretKey::from_slice(&hex::decode(clean_key)?)
             .map_err(|e| anyhow!("Invalid private key: {}", e))?;
+        let public_key =
+            hex::encode(secp256k1::PublicKey::from_secret_key(&secp, &secret_key).serialize());
 
-        Ok(SigningService { secp, secret_key })
+        Ok(SigningService {
+            secp,
+            secret_key,
+            public_key,
+        })
+    }
+
+    pub fn get_public_key(&self) -> &str {
+        &self.public_key
     }
 
     pub fn sign_twap(&self, twap: f64) -> Result<String> {

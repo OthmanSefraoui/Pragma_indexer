@@ -8,7 +8,9 @@ use axum::{
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tokio::sync::mpsc::UnboundedSender;
 
+use crate::services::p2p::TwapMessage;
 use crate::services::{redis_client::RedisClient, SigningService};
 
 #[derive(Debug, Serialize)]
@@ -39,12 +41,18 @@ pub struct ErrorResponse {
 pub struct ApiState {
     pub redis_client: RedisClient,
     pub signing_service: SigningService,
+    pub p2p_sender: UnboundedSender<TwapMessage>,
 }
 
-pub fn create_router(redis_client: RedisClient, signing_service: SigningService) -> Router {
+pub fn create_router(
+    redis_client: RedisClient,
+    signing_service: SigningService,
+    p2p_sender: UnboundedSender<TwapMessage>,
+) -> Router {
     let state = Arc::new(ApiState {
         redis_client,
         signing_service,
+        p2p_sender,
     });
 
     Router::new()
@@ -98,6 +106,23 @@ async fn get_twap(
             }),
         )
     })?;
+
+    let p2p_message = TwapMessage {
+        pair_id: params.pair_id.clone(),
+        twap: BigInt::from((twap_) as u64).to_string(),
+        period,
+        signature: signature.clone(),
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+        public_key: state.signing_service.get_public_key().to_string(),
+    };
+
+    // Broadcast to P2P network
+    if let Err(e) = state.p2p_sender.send(p2p_message) {
+        eprintln!("Failed to broadcast TWAP update: {}", e);
+    }
 
     Ok(Json(TwapResponse {
         pair_id: params.pair_id,
