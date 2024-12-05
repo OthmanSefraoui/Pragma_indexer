@@ -9,6 +9,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - APIBARA_API_KEY=${APIBARA_API_KEY}
       - RUST_BACKTRACE=1  # Added for better error tracking
+      - STARTING_BLOCK=${STARTING_BLOCK}
     depends_on:
       redis:
         condition: service_healthy

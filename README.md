@@ -136,27 +136,3 @@ src/
 ```bash
 docker-compose logs -f app
 ```
-
-## Development
-
-To modify the contract address or event selector:
-
-1. Update the contract address in `main.rs`:
-
-```rust
-let contract_address = "YOUR_CONTRACT_ADDRESS".to_string();
-```
-
-2. Rebuild and restart:
-
-```bash
-# For local development
-cargo run
-
-# For Docker deployment
-docker-compose up -d --build
-```
-
-## License
-
-[Add your license information here]

@@ -1,5 +1,6 @@
 use core::time;
 
+use crate::config::{Config, SUBMITTED_SPOT_ENTRY_SELECTOR};
 use crate::services::redis_client::RedisClient;
 use crate::types::spot_entry::SpotEntry;
 use anyhow::Result;
@@ -16,27 +17,14 @@ use starknet::core::types::Felt;
 const INDEXING_STREAM_CHUNK_SIZE: usize = 1;
 
 pub struct Indexer {
-    uri: Uri,
-    apibara_api_key: String,
-    from_block: u64,
-    contract_address: String,
+    config: Config,
     redis_client: RedisClient,
 }
 
 impl Indexer {
-    pub fn new(
-        apibara_api_key: String,
-        from_block: u64,
-        contract_address: String,
-        redis_url: String,
-    ) -> Indexer {
-        let uri = Uri::from_static("https://sepolia.starknet.a5a.ch");
-        let redis_client = RedisClient::new(&redis_url).unwrap();
+    pub fn new(config: Config, redis_client: RedisClient) -> Self {
         Indexer {
-            uri,
-            apibara_api_key,
-            from_block,
-            contract_address,
+            config,
             redis_client,
         }
     }
@@ -44,7 +32,7 @@ impl Indexer {
     /// Start indexing SubmittedSpotEntry events
     pub async fn run(&self) -> Result<()> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(self.from_block)
+            .with_starting_block(self.config.starting_block)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
@@ -52,12 +40,11 @@ impl Indexer {
                     .add_event(|event| {
                         event
                             .with_from_address(
-                                FieldElement::from_hex(&self.contract_address).unwrap(),
+                                FieldElement::from_hex(&self.config.contract_address).unwrap(),
                             )
-                            .with_keys(vec![FieldElement::from_hex(
-                                "0x280bb2099800026f90c334a3a23888ffe718a2920ffbbf4f44c6d3d5efb613c",
-                            )
-                            .unwrap()])
+                            .with_keys(vec![
+                                FieldElement::from_hex(SUBMITTED_SPOT_ENTRY_SELECTOR).unwrap()
+                            ])
                     })
                     .build()
             });
@@ -66,15 +53,18 @@ impl Indexer {
         config_client.send(stream_config.clone()).await?;
 
         let mut stream = ClientBuilder::default()
-            .with_bearer_token(Some(self.apibara_api_key.clone()))
-            .connect(self.uri.clone())
+            .with_bearer_token(Some(self.config.apibara_api_key.clone()))
+            .connect(Uri::from_static("https://sepolia.starknet.a5a.ch"))
             .await
             .unwrap()
             .start_stream::<Filter, Block, _>(config_stream)
             .await
             .unwrap();
 
-        println!("🔍 Started indexing from block {}", self.from_block);
+        println!(
+            "🔍 Started indexing from block {}",
+            self.config.starting_block
+        );
 
         loop {
             match stream.try_next().await {

@@ -18,7 +18,7 @@ COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \
     cargo build --release && \
-    rm -f target/release/deps/starknet_indexer*
+    rm -f target/release/deps/Pragma_indexer*
 
 # Copy the real source code
 COPY src ./src/
@@ -46,6 +46,7 @@ COPY --from=builder /usr/src/app/target/release/Pragma_indexer .
 ENV RUST_LOG=info
 ENV REDIS_URL=redis://redis:6379
 ENV APIBARA_API_KEY=""
+ENV STARTING_BLOCK=0
 
 # Expose the API port
 EXPOSE 3000
