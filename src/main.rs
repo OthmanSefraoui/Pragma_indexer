@@ -8,7 +8,7 @@ mod types;
 
 use config::Config;
 use services::redis_client::RedisClient;
-use services::Indexer;
+use services::{Indexer, SigningService};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,6 +27,7 @@ async fn main() -> Result<()> {
     let redis_client = RedisClient::new(&config.redis_url)?;
 
     let api_redis_client = redis_client.clone();
+    let signing_service = SigningService::new(&config.private_key)?;
     let indexer_config = config.clone();
     // Start the indexer in a separate task
     let indexer_handle = tokio::spawn(async move {
@@ -42,7 +43,7 @@ async fn main() -> Result<()> {
     });
 
     // Start the API server
-    let app = api::create_router(api_redis_client);
+    let app = api::create_router(api_redis_client, signing_service);
 
     let addr = SocketAddr::new(config.server_host.parse()?, config.server_port);
     println!("API server starting on {}", addr);

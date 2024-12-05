@@ -12,12 +12,12 @@ pub struct Config {
     pub server_host: String,
     pub server_port: u16,
     pub starting_block: u64,
+    pub private_key: String,
 }
 
 impl Config {
     pub fn new() -> Result<Self> {
         dotenv::dotenv().ok();
-
         Ok(Config {
             redis_url: env::var("REDIS_URL")
                 .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
@@ -39,6 +39,9 @@ impl Config {
                 .unwrap_or_else(|_| "0".to_string())
                 .parse()
                 .context("STARTING_BLOCK must be a valid number")?,
+
+            private_key: env::var("PRIVATE_KEY")
+                .context("PRIVATE_KEY environment variable must be set")?,
         })
     }
 }

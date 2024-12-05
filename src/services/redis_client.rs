@@ -1,5 +1,6 @@
 use crate::types::spot_entry::SpotEntry;
 use anyhow::Result;
+use num_bigint::BigInt;
 use redis::AsyncCommands;
 
 #[derive(Clone)]
